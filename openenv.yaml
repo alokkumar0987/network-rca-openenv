@@ -1,0 +1,8 @@
+name: network-rca-env
+version: 1.0.0
+description: Simulated network root cause analysis environment with real incidents.
+author: 3xNinja
+entry_point: environment.py:NetworkRCAEnv
+action_model: models.Action
+observation_model: models.Observation
+reward_model: models.Reward
