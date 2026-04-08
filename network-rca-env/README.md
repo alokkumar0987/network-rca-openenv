@@ -1,14 +1,18 @@
 ---
-title: Network Rca Env
+echo "title: Network Rca Env
 emoji: 🏆
 colorFrom: pink
 colorTo: indigo
 sdk: docker
-sdk_version: "latest"
+sdk_version: latest
 app_file: app.py
 pinned: false
 license: mit
-short_description: NOC RCA env, real data, dense rewards, LangGraph+OpenAI.
+short_description: NOC RCA env, real data, dense rewards, LangGraph+OpenAI." > README.md
+git add README.md
+git commit -m "add config"
+git push origin main
+
 ---
 
 Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
