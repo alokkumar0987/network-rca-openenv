@@ -4,7 +4,7 @@ emoji: 🏆
 colorFrom: pink
 colorTo: indigo
 sdk: docker
-sdk_version: latest
+sdk_version: "latest"
 app_file: app.py
 pinned: false
 license: mit
@@ -14,12 +14,21 @@ short_description: NOC RCA env, real data, dense rewards, LangGraph+OpenAI.
 
 Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
 
+## Repository layout (important for Hugging Face Spaces)
+
+This project keeps **`README.md`**, **`Dockerfile`**, and **`app.py` at the repository root**.  
+Do **not** nest the whole app under an extra `network-rca-env/` folder — that breaks Space configuration (missing root `README.md` metadata).
+
+**Remotes (this project):**
+
+- GitHub: [alokkumar0987/network-rca-openenv](https://github.com/alokkumar0987/network-rca-openenv)
+- Hugging Face Space: [alok098/network-rca-env](https://huggingface.co/spaces/alok098/network-rca-env)
 
 # Network Root Cause Analysis Environment
 
 [![OpenEnv](https://img.shields.io/badge/OpenEnv-1.0-blue)](https://github.com/open-env/openenv)
 [![Docker](https://img.shields.io/badge/docker-ready-2496ED)](https://www.docker.com/)
-[![Hugging Face](https://img.shields.io/badge/🤗%20Space-deployed-ffcc00)](https://huggingface.co/spaces)
+[![Hugging Face](https://img.shields.io/badge/🤗%20Space-deployed-ffcc00)](https://huggingface.co/spaces/alok098/network-rca-env)
 
 ## Overview
 
@@ -112,9 +121,24 @@ The report contains:
 - `results.<difficulty>.episodes[].termination_reason`
 - `aggregate.overall_average_total_reward`
 
+## Hackathon inference script (`inference.py`)
+
+For Meta OpenEnv–style submissions, root-level **`inference.py`**:
+
+- Reads **`API_BASE_URL`** (default `https://api.openai.com/v1`), **`MODEL_NAME`** (default `gpt-4.1-mini`), and required **`HF_TOKEN`**
+- Uses the **`openai`** Python client only for LLM calls
+- Prints **`[START]`**, **`[STEP]`**, **`[END]`** lines to stdout in the required format
+
+Run (set a real token in your environment):
+
+```bash
+export HF_TOKEN="hf_..."   # or your provider token per submission rules
+python inference.py
+```
+
 ## API Endpoints
 
-- `POST /reset` -> reset episode by difficulty
+- `POST /reset` -> reset episode by difficulty (body optional: `{}`, `{"difficulty":"easy"}`, etc.; empty body is accepted for validators)
 - `POST /step` -> apply one action
 - `GET /state` -> current environment state
 - `GET /tasks` -> task list + action schema
@@ -170,11 +194,20 @@ $env:LLM_MODEL="gpt-4o-mini"
 $env:OLLAMA_FALLBACK_MODEL="deepseek-v3.1:671b-cloud"
 ```
 
-5. Validate spec:
+5. Install OpenEnv CLI (if `openenv` is not on your PATH):
 
 ```bash
+pip install -U openenv-core
 openenv validate
 ```
+
+On Windows, if `openenv` is not found, run the executable from your user Scripts folder, for example:
+
+```powershell
+& "$env:APPDATA\Python\Python313\Scripts\openenv.exe" validate
+```
+
+Expected: a line like `[OK] <folder-name>: Ready for multi-mode deployment` (the name matches your clone directory).
 
 6. Run server:
 
@@ -229,9 +262,16 @@ In another terminal:
 
 ```bash
 curl http://127.0.0.1:7860/
+curl -X POST http://127.0.0.1:7860/reset -H "Content-Type: application/json" -d "{}"
 curl -X POST http://127.0.0.1:7860/reset -H "Content-Type: application/json" -d "{\"difficulty\":\"easy\"}"
 curl http://127.0.0.1:7860/tasks
 curl http://127.0.0.1:7860/baseline
+```
+
+Or, with the server running:
+
+```bash
+python smoke_test.py
 ```
 
 Expected:
@@ -265,6 +305,19 @@ Expected:
 - Docker build/run works
 - README is up to date with setup + verification flow
 
+## Testing a deployed Hugging Face Space
+
+After the Space is **Running**, the API is usually available at:
+
+`https://<your-username>-<space-name>.hf.space`
+
+Example (replace with your Space if different):
+
+```bash
+curl -sS "https://alok098-network-rca-env.hf.space/"
+curl -sS -X POST "https://alok098-network-rca-env.hf.space/reset" -H "Content-Type: application/json" -d "{}"
+```
+
 ## Latest Verification Output
 
 The following outputs were captured from a full local module sweep.
@@ -274,13 +327,13 @@ The following outputs were captured from a full local module sweep.
 Command:
 
 ```bash
-myenv3\Scripts\openenv.exe validate
+openenv validate
 ```
 
-Output:
+Output (project name may match your clone folder, e.g. `network_rca` or `network-rca-openenv`):
 
 ```text
-[OK] network-rca-env: Ready for multi-mode deployment
+[OK] network_rca: Ready for multi-mode deployment
 ```
 
 2) Baseline module
