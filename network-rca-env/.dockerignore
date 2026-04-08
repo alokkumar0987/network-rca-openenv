@@ -1,0 +1,11 @@
+myenv3/
+__pycache__/
+.cursor/
+debug-eeaaee.log
+*.pyc
+*.pyo
+*.pyd
+.git/
+.gitignore
+rt.sql/
+

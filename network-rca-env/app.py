@@ -1,0 +1,124 @@
+from typing import Optional
+
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+import uvicorn
+from environment import NetworkRCAEnv
+from tasks import _TASKS, grade_episode
+from models import Action
+
+try:
+    from baseline import run_baseline
+except ImportError:
+    from baseline import run_agent as run_baseline
+
+app = FastAPI(title="Network RCA Environment")
+env = None
+
+class StepRequest(BaseModel):
+    action: dict
+
+class ResetRequest(BaseModel):
+    difficulty: str = "easy"
+
+class GraderRequest(BaseModel):
+    conclusion: str
+
+def _derive_required_evidence(task_data: dict, env_obj: NetworkRCAEnv) -> list:
+    required = task_data.get("required_evidence", [])
+    if required:
+        return [str(x) for x in required]
+    root_device = env_obj._extract_root_device()
+    if root_device == "unknown":
+        return []
+    return [f"metrics:{root_device}", f"logs:{root_device}"]
+
+@app.get("/")
+def read_root():
+    return {"message": "Network RCA Environment is running"}
+
+@app.post("/reset")
+def reset(req: Optional[ResetRequest] = None):
+    global env
+    env = NetworkRCAEnv()
+    # OpenEnv validators may send POST /reset with an empty body.
+    difficulty = req.difficulty if req is not None else "easy"
+    obs = env.reset(difficulty)
+    return obs.dict()
+
+@app.post("/step")
+def step(req: StepRequest):
+    global env
+    if env is None:
+        raise HTTPException(status_code=400, detail="Environment not reset")
+    try:
+        action = Action(**req.action)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid action: {e}")
+    obs, reward, done, info = env.step(action)
+    return {
+        "observation": obs.dict(),
+        "reward": reward.dict(),
+        "done": done,
+        "info": info
+    }
+
+@app.get("/state")
+def state():
+    global env
+    if env is None:
+        raise HTTPException(status_code=400, detail="Environment not reset")
+    return env.state()
+
+@app.get("/baseline")
+def baseline():
+    scores = run_baseline()
+    return scores
+
+@app.post("/grader")
+def grader(req: GraderRequest):
+    global env
+    if env is None:
+        raise HTTPException(status_code=400, detail="No active environment")
+    required_evidence = _derive_required_evidence(env.task_data, env)
+    gathered_evidence = {
+        "evidence_keys": [f"metrics:{d}" for d in env.metrics_queried] + [f"logs:{d}" for d in env.logs_checked]
+    }
+    score, feedback, breakdown = grade_episode(
+        conclusion=req.conclusion,
+        ground_truth=env.task_data["ground_truth"],
+        required_evidence=required_evidence,
+        gathered_evidence=gathered_evidence,
+        step_count=env.step_count,
+        max_steps=env.task_data.get("max_steps", 20),
+    )
+    return {
+        "score": score,
+        "feedback": feedback,
+        "breakdown": breakdown,
+        "task_id": env.task_data.get("id", f"{env.difficulty}-0"),
+        "required_evidence": required_evidence,
+        "gathered_evidence": gathered_evidence["evidence_keys"],
+    }
+
+@app.get("/tasks")
+def tasks():
+    action_schema = Action.model_json_schema()
+    task_list = []
+    for difficulty, tasks in _TASKS.items():
+        for i, task in enumerate(tasks):
+            task_list.append({
+                "id": task.get("id", f"{difficulty}-{i}"),
+                "difficulty": difficulty,
+                "index": i,
+                "description": task.get("description", ""),
+                "ground_truth": task.get("ground_truth", ""),
+                "max_steps": task.get("max_steps", 20),
+                "alarm_count": len(task.get("alarms", [])),
+                "required_evidence": task.get("required_evidence", []),
+                "supports_actions": ["investigate", "correlate", "query_metrics", "check_logs", "conclude"],
+            })
+    return {"tasks": task_list, "action_schema": action_schema}
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=7860)
