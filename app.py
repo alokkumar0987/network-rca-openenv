@@ -117,6 +117,7 @@ def tasks():
                 "alarm_count": len(task.get("alarms", [])),
                 "required_evidence": task.get("required_evidence", []),
                 "supports_actions": ["investigate", "correlate", "query_metrics", "check_logs", "conclude"],
+                "has_grader": True,
             })
     return {"tasks": task_list, "action_schema": action_schema}
 

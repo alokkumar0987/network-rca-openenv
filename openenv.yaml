@@ -1,3 +1,4 @@
+# OpenEnv environment specification (Meta OpenEnv / hackathon Phase 2 expects >=3 tasks + grader scores in (0, 1))
 name: network-rca-env
 version: 1.0.0
 description: Simulated network root cause analysis environment with real incidents.
@@ -6,3 +7,35 @@ entry_point: environment.py:NetworkRCAEnv
 action_model: models.Action
 observation_model: models.Observation
 reward_model: models.Reward
+
+# At least three tasks with graders (POST /grader) — IDs match GET /tasks (easy-0, medium-0, hard-0 when task has no explicit id)
+tasks:
+  - id: easy-0
+    name: Node down RCA (easy)
+    description: Diagnose a single node-down incident from alarms, topology, metrics, and logs.
+    difficulty: easy
+    max_steps: 10
+    reward_range: [0.0, 1.0]
+    has_grader: true
+  - id: medium-0
+    name: OSPF neighbor cascade (medium)
+    description: Correlate multiple OSPF neighbor alarms and identify the root cause with evidence.
+    difficulty: medium
+    max_steps: 10
+    reward_range: [0.0, 1.0]
+    has_grader: true
+  - id: hard-0
+    name: Multi-link hard RCA (hard)
+    description: Resolve a complex link-down scenario requiring metrics and logs on multiple devices.
+    difficulty: hard
+    max_steps: 10
+    reward_range: [0.0, 1.0]
+    has_grader: true
+
+endpoints:
+  health: GET /
+  reset: POST /reset
+  step: POST /step
+  state: GET /state
+  tasks: GET /tasks
+  grader: POST /grader

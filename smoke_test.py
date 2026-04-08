@@ -43,8 +43,9 @@ def main() -> int:
 
         grader = _request("POST", "/grader", {"conclusion": "power outage"})
         score = grader.get("score")
-        score_ok = isinstance(score, (int, float)) and 0.0 <= float(score) <= 1.0
-        checks.append(("/grader", score_ok, "grader score invalid"))
+        # Hackathon / OpenEnv Phase 2: scores must be strictly inside (0, 1)
+        score_ok = isinstance(score, (int, float)) and 0.0 < float(score) < 1.0
+        checks.append(("/grader", score_ok, "grader score must be strictly between 0 and 1"))
 
         baseline = _request("GET", "/baseline")
         has_results = isinstance(baseline.get("results"), dict) and len(baseline["results"]) > 0
