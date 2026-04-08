@@ -1,3 +1,6 @@
 .env
 __pycache__/
 *.pyc
+
+# Accidental nested clone / worktree at repo root (do not commit)
+network-rca/
