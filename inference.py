@@ -1,10 +1,7 @@
 import os
 from openai import OpenAI
 
-from environment import NetworkRCAEnv
-from models import Action
-
-
+# Defaults only for API_BASE_URL and MODEL_NAME (hackathon rule). HF_TOKEN must not have a default.
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4.1-mini")
 HF_TOKEN = os.getenv("HF_TOKEN")
@@ -25,7 +22,9 @@ def _safe_error(value) -> str:
     return str(value)
 
 
-def choose_action_with_llm(observation) -> Action:
+def choose_action_with_llm(observation) -> "Action":
+    from models import Action
+
     prompt = (
         "Given these alarms, suggest the next Network RCA action in plain text. "
         "Use one short sentence.\n\n"
@@ -39,19 +38,21 @@ def choose_action_with_llm(observation) -> Action:
         )
         _ = completion.choices[0].message.content
     except Exception:
-        # Keep inference resilient if the model call fails transiently.
         pass
 
     return Action(action_type="correlate", target=None, root_cause=None)
 
 
 def run_episode(task_name: str = "network-rca", benchmark: str = "openenv") -> None:
+    # Emit [START] before importing the env (sentence-transformers load) so stdout order matches the spec.
+    print(f"[START] task={task_name} env={benchmark} model={MODEL_NAME}")
+
+    from environment import NetworkRCAEnv
+
     env = NetworkRCAEnv()
     rewards = []
     success = False
     step_idx = 0
-
-    print(f"[START] task={task_name} env={benchmark} model={MODEL_NAME}")
 
     try:
         observation = env.reset("easy")
