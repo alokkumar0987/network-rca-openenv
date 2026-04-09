@@ -121,5 +121,6 @@ def grade_episode(
 
 def grade_conclusion(conclusion: str, ground_truth: str) -> tuple[float, str]:
     if not conclusion:
-        return 0.0, "No conclusion provided"
-    return _score_root_cause(conclusion, ground_truth)
+        return _clamp_grader_score_open_interval(0.0), "No conclusion provided"
+    score, feedback = _score_root_cause(conclusion, ground_truth)
+    return _clamp_grader_score_open_interval(score), feedback
