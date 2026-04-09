@@ -28,6 +28,19 @@ def get_task(difficulty: str):
         raise ValueError(f"No tasks available for {difficulty}")
     return json.loads(json.dumps(tasks_list[0]))
 
+
+def get_task_by_id(task_id: str):
+    target = str(task_id or "").strip()
+    if not target:
+        raise ValueError("task_id is required")
+    # Prefer explicit task.id if present, else fallback to difficulty-index convention.
+    for difficulty, tasks_list in _TASKS.items():
+        for i, task in enumerate(tasks_list):
+            candidate = str(task.get("id", f"{difficulty}-{i}"))
+            if candidate == target:
+                return json.loads(json.dumps(task))
+    raise ValueError(f"Unknown task_id: {target}")
+
 def _normalize_text(value: str) -> str:
     return " ".join((value or "").lower().strip().split())
 

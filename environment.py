@@ -1,10 +1,10 @@
 from typing import Tuple, Dict, Any
 try:
     from models import Observation, Action, Reward, Alarm
-    from tasks import get_task, grade_episode
+    from tasks import get_task, get_task_by_id, grade_episode
 except ImportError:
     from models import Observation, Action, Reward, Alarm
-    from tasks import get_task, grade_episode
+    from tasks import get_task, get_task_by_id, grade_episode
 
 # Reward constants
 REWARD_INVEST_RELEVANT = 0.25
@@ -33,9 +33,17 @@ class NetworkRCAEnv:
         self.termination_reason = None
         self.allowed_action_types = {"investigate", "correlate", "query_metrics", "check_logs", "conclude"}
 
-    def reset(self, difficulty: str = "easy") -> Observation:
+    def reset(self, difficulty: str = "easy", task_id: str | None = None) -> Observation:
         self.difficulty = difficulty
-        self.task_data = get_task(difficulty)
+        if task_id:
+            self.task_data = get_task_by_id(task_id)
+            # Keep reported task identity stable for validators even when source JSON has no explicit `id`.
+            if isinstance(task_id, str) and "-" in task_id:
+                self.difficulty = task_id.split("-", 1)[0]
+            if not self.task_data.get("id"):
+                self.task_data["id"] = str(task_id)
+        else:
+            self.task_data = get_task(difficulty)
         self.step_count = 0
         self.done = False
         self.termination_reason = None
