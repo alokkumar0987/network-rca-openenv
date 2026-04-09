@@ -15,21 +15,21 @@ tasks:
     description: Diagnose a single node-down incident from alarms, topology, metrics, and logs.
     difficulty: easy
     max_steps: 10
-    reward_range: [0.0, 1.0]
+    reward_range: [0.01, 0.99]
     has_grader: true
   - id: medium-0
     name: OSPF neighbor cascade (medium)
     description: Correlate multiple OSPF neighbor alarms and identify the root cause with evidence.
     difficulty: medium
     max_steps: 10
-    reward_range: [0.0, 1.0]
+    reward_range: [0.01, 0.99]
     has_grader: true
   - id: hard-0
     name: Multi-link hard RCA (hard)
     description: Resolve a complex link-down scenario requiring metrics and logs on multiple devices.
     difficulty: hard
     max_steps: 10
-    reward_range: [0.0, 1.0]
+    reward_range: [0.01, 0.99]
     has_grader: true
 
 endpoints:

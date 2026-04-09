@@ -1,6 +1,7 @@
 {
   "easy": [
     {
+      "id": "easy-0",
       "alarms": [
         {
           "id": "INC-HMIS-Shahdara-J1.1K-PE-T4-NR-269506_1770963126.613",
@@ -152,6 +153,7 @@
   ],
   "medium": [
     {
+      "id": "medium-0",
       "alarms": [
         {
           "id": "INC-Baroda_House_MX-204-cfabf4bc_1771263950.9",
@@ -496,6 +498,7 @@
   ],
   "hard": [
     {
+      "id": "hard-0",
       "alarms": [
         {
           "id": "INC-GTL-C8201-T1-R2-P-3db6a007_1772517515.197",

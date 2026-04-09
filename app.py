@@ -95,7 +95,7 @@ def grader(req: GraderRequest):
         max_steps=env.task_data.get("max_steps", 20),
     )
     return {
-        "score": score,
+        "score": float(score),
         "feedback": feedback,
         "breakdown": breakdown,
         "task_id": env.task_data.get("id", f"{env.difficulty}-0"),
@@ -120,6 +120,7 @@ def tasks():
                 "required_evidence": task.get("required_evidence", []),
                 "supports_actions": ["investigate", "correlate", "query_metrics", "check_logs", "conclude"],
                 "has_grader": True,
+                "grader": {"enabled": True},
             })
     return {"tasks": task_list, "action_schema": action_schema}
 

@@ -88,17 +88,17 @@ def run_episode(task_name: str = "network-rca", benchmark: str = "openenv") -> N
 
             step_idx = idx
             reward_value = float(score)
-            rewards.append(f"{reward_value:.2f}")
+            rewards.append(f"{reward_value:.4f}")
             error_value = _safe_error(info.get("last_action_error"))
             print(
                 f"[STEP] step={step_idx} action={action.action_type} "
-                f"reward={reward_value:.2f} done={_bool_str(step_idx == len(task_ids))} error={error_value}"
+                f"reward={reward_value:.4f} done={_bool_str(step_idx == len(task_ids))} error={error_value}"
             )
         success = True
     except Exception as exc:
         print(
             f"[STEP] step={step_idx + 1} action=error "
-            f"reward=0.00 done=false error={_safe_error(exc)}"
+            f"reward=0.0100 done=false error={_safe_error(exc)}"
         )
     finally:
         if hasattr(env, "close"):

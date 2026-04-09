@@ -12,7 +12,8 @@ with open(_TASKS_FILE, 'r') as f:
     _TASKS = json.load(f)
 
 # Phase-2 validators require grader scores strictly inside (0, 1), not 0.0 or 1.0.
-_GRADER_EPS = 1e-4
+# Use a margin large enough to survive float/json round-trips and strict boundary checks.
+_GRADER_EPS = 0.01
 
 
 def _clamp_grader_score_open_interval(score: float) -> float:
@@ -109,10 +110,11 @@ def grade_episode(
     final_score = max(0.0, min(1.0, final_score))
     final_score = _clamp_grader_score_open_interval(final_score)
 
+    # Some validators scan all floats in the grader payload; keep components off 0.0/1.0 too.
     breakdown = {
-        "root_cause_score": round(root_score, 4),
-        "evidence_score": round(evidence_score, 4),
-        "efficiency_score": round(efficiency_score, 4),
+        "root_cause_score": round(_clamp_grader_score_open_interval(root_score), 4),
+        "evidence_score": round(_clamp_grader_score_open_interval(evidence_score), 4),
+        "efficiency_score": round(_clamp_grader_score_open_interval(efficiency_score), 4),
         "weights": weights,
         "missing_evidence": missing_evidence,
     }

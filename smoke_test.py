@@ -7,14 +7,16 @@ import urllib.request
 BASE_URL = "http://127.0.0.1:7860"
 
 
-def _request(method: str, path: str, body: dict | None = None) -> dict:
+def _request(
+    method: str, path: str, body: dict | None = None, *, timeout_s: float = 20.0
+) -> dict:
     data = None
     headers = {}
     if body is not None:
         data = json.dumps(body).encode("utf-8")
         headers["Content-Type"] = "application/json"
     req = urllib.request.Request(f"{BASE_URL}{path}", data=data, headers=headers, method=method)
-    with urllib.request.urlopen(req, timeout=20) as resp:
+    with urllib.request.urlopen(req, timeout=timeout_s) as resp:
         payload = resp.read().decode("utf-8")
         return json.loads(payload) if payload else {}
 
@@ -39,7 +41,10 @@ def main() -> int:
         checks.append(("/state", isinstance(state.get("step_count"), int), "step_count missing"))
 
         tasks = _request("GET", "/tasks")
-        checks.append(("/tasks", len(tasks.get("tasks", [])) >= 3, "tasks < 3"))
+        task_rows = tasks.get("tasks", [])
+        checks.append(("/tasks", len(task_rows) >= 3, "tasks < 3"))
+        graded = sum(1 for t in task_rows if t.get("has_grader") or (t.get("grader") or {}).get("enabled"))
+        checks.append(("/tasks", graded >= 3, f"tasks with graders < 3 (got {graded})"))
 
         grader = _request("POST", "/grader", {"conclusion": "power outage"})
         score = grader.get("score")
@@ -47,7 +52,14 @@ def main() -> int:
         score_ok = isinstance(score, (int, float)) and 0.0 < float(score) < 1.0
         checks.append(("/grader", score_ok, "grader score must be strictly between 0 and 1"))
 
-        baseline = _request("GET", "/baseline")
+        for tid in ("easy-0", "medium-0", "hard-0"):
+            _request("POST", "/reset", {"difficulty": "easy", "task_id": tid})
+            g = _request("POST", "/grader", {"conclusion": "probe"})
+            sc = g.get("score")
+            ok = isinstance(sc, (int, float)) and 0.0 < float(sc) < 1.0
+            checks.append((f"/grader[{tid}]", ok, f"score out of (0,1): {sc!r}"))
+
+        baseline = _request("GET", "/baseline", timeout_s=180.0)
         has_results = isinstance(baseline.get("results"), dict) and len(baseline["results"]) > 0
         checks.append(("/baseline", has_results, "baseline results missing"))
     except urllib.error.URLError as e:
