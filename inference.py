@@ -1,7 +1,9 @@
 import os
+from typing import TYPE_CHECKING
 from openai import OpenAI
-import json
-import time
+
+if TYPE_CHECKING:
+    from models import Action
 
 # Defaults only for API_BASE_URL and MODEL_NAME (hackathon rule). HF_TOKEN must not have a default.
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
@@ -12,23 +14,6 @@ if HF_TOKEN is None:
     raise ValueError("HF_TOKEN environment variable is required")
 
 client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
-
-# #region agent log
-def _dbg(hypothesis_id: str, location: str, message: str, data: dict, run_id: str = "run-2") -> None:
-    try:
-        with open("debug-cfcb32.log", "a", encoding="utf-8") as f:
-            f.write(json.dumps({
-                "sessionId": "cfcb32",
-                "runId": run_id,
-                "hypothesisId": hypothesis_id,
-                "location": location,
-                "message": message,
-                "data": data,
-                "timestamp": int(time.time() * 1000),
-            }) + "\n")
-    except Exception:
-        pass
-# #endregion
 
 
 def _bool_str(value: bool) -> str:
@@ -65,9 +50,6 @@ def choose_action_with_llm(observation) -> "Action":
 def run_episode(task_name: str = "network-rca", benchmark: str = "openenv") -> None:
     # Emit [START] before importing the env (sentence-transformers load) so stdout order matches the spec.
     print(f"[START] task={task_name} env={benchmark} model={MODEL_NAME}")
-    # #region agent log
-    _dbg("H5", "inference.py:run_episode", "episode start", {"task_name": task_name, "benchmark": benchmark})
-    # #endregion
 
     from environment import NetworkRCAEnv
     from tasks import grade_episode
@@ -125,25 +107,6 @@ def run_episode(task_name: str = "network-rca", benchmark: str = "openenv") -> N
         print(
             f"[END] success={_bool_str(success)} steps={step_idx} rewards={rewards_csv}"
         )
-        # #region agent log
-        parsed_rewards = []
-        for token in rewards:
-            try:
-                parsed_rewards.append(float(token))
-            except Exception:
-                pass
-        _dbg(
-            "H5",
-            "inference.py:run_episode",
-            "episode end",
-            {
-                "steps": step_idx,
-                "rewards": parsed_rewards,
-                "reward_count": len(parsed_rewards),
-                "all_rewards_in_open_interval": all((r > 0.0 and r < 1.0) for r in parsed_rewards),
-            },
-        )
-        # #endregion
 
 
 if __name__ == "__main__":
