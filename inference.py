@@ -96,8 +96,10 @@ def run_episode(task_name: str = "network-rca", benchmark: str = "openenv") -> N
             )
         success = True
     except Exception as exc:
+        step_idx += 1
+        rewards.append("0.0100")
         print(
-            f"[STEP] step={step_idx + 1} action=error "
+            f"[STEP] step={step_idx} action=error "
             f"reward=0.0100 done=false error={_safe_error(exc)}"
         )
     finally:

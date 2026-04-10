@@ -49,10 +49,10 @@ def _score_root_cause(conclusion: str, ground_truth: str) -> tuple[float, str]:
     c = _normalize_text(conclusion)
     gt = _normalize_text(ground_truth)
     if not c:
-        return 0.0, "No conclusion provided"
+        return _clamp_grader_score_open_interval(0.0), "No conclusion provided"
 
     if c == gt:
-        return 1.0, "Exact match"
+        return _clamp_grader_score_open_interval(1.0), "Exact match"
 
     # High-confidence domain aliases/synonyms
     keyword_groups = [
@@ -64,30 +64,30 @@ def _score_root_cause(conclusion: str, ground_truth: str) -> tuple[float, str]:
     ]
     for label, terms in keyword_groups:
         if label in gt and all(t in c for t in terms):
-            return 0.9, f"Partial match ({label})"
+            return _clamp_grader_score_open_interval(0.9), f"Partial match ({label})"
 
     emb1 = _sim_model.encode(conclusion, convert_to_tensor=True)
     emb2 = _sim_model.encode(ground_truth, convert_to_tensor=True)
-    similarity = util.cos_sim(emb1, emb2).item()
+    similarity = float(util.cos_sim(emb1, emb2).item())
     if similarity < 0.1:
-        return 0.0, "Conclusion unrelated to ground truth"
+        return _clamp_grader_score_open_interval(0.0), "Conclusion unrelated to ground truth"
     score = max(0.0, min(0.8, (similarity - 0.1) / 0.9))
-    return score, f"Semantic similarity: {similarity:.2f}"
+    return _clamp_grader_score_open_interval(score), f"Semantic similarity: {similarity:.2f}"
 
 def _score_evidence(required_evidence: list, gathered_evidence: dict) -> tuple[float, list]:
     required = [str(x) for x in (required_evidence or [])]
     if not required:
-        return 1.0, []
+        return _clamp_grader_score_open_interval(1.0), []
     gathered = set(str(x) for x in (gathered_evidence or {}).get("evidence_keys", []))
     missing = [k for k in required if k not in gathered]
-    coverage = (len(required) - len(missing)) / len(required)
-    return max(0.0, min(1.0, coverage)), missing
+    coverage = float((len(required) - len(missing)) / max(1, len(required)))
+    return _clamp_grader_score_open_interval(coverage), missing
 
 def _score_efficiency(step_count: int, max_steps: int) -> float:
     if max_steps <= 0:
-        return 0.0
+        return _clamp_grader_score_open_interval(0.0)
     used_ratio = max(0.0, min(1.0, float(step_count) / float(max_steps)))
-    return 1.0 - used_ratio
+    return _clamp_grader_score_open_interval(1.0 - used_ratio)
 
 def grade_episode(
     conclusion: str,

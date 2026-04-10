@@ -210,7 +210,7 @@ def run_agent(difficulty: str = "hard") -> Dict[str, Any]:
     out = {
         "difficulty": difficulty,
         "steps_taken": final["step_count"],
-        "total_reward": float(final["total_reward"]),
+        "total_reward": float(max(0.01, min(0.99, final["total_reward"]))),
         "done": bool(final["done"]),
         "action_sequence": final["action_sequence"],
         "inferred_root_cause": final["inferred_root_cause"],

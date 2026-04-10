@@ -121,6 +121,7 @@ def tasks():
                 "supports_actions": ["investigate", "correlate", "query_metrics", "check_logs", "conclude"],
                 "has_grader": True,
                 "grader": {"enabled": True},
+                "reward_range": [0.01, 0.99],
             })
     return {"tasks": task_list, "action_schema": action_schema}
 

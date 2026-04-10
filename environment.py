@@ -235,7 +235,8 @@ class NetworkRCAEnv:
             metrics=obs_metrics if obs_metrics else None,
             logs=obs_logs if obs_logs else None
         )
-        reward = Reward(value=max(-1.0, min(1.0, reward_value)), details="; ".join(details))
+        reward_value = max(0.01, min(0.99, float(reward_value)))
+        reward = Reward(value=reward_value, details="; ".join(details))
         info = {
             "task_id": self.task_data.get("id", f"{self.difficulty}-0"),
             "termination_reason": self.termination_reason,
